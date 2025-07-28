@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Performance Calculator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 1.5rem;
+        }
+        .container {
+            background-color: white;
+            padding: 2.5rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            text-align: center;
+            max-width: 600px;
+            width: 100%;
+        }
+        .input-row, .result-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1rem;
+            gap: 1rem;
+        }
+        .input-row label, .result-row .result-label {
+            flex-basis: 45%;
+            text-align: left;
+            font-weight: 500;
+            color: #4b5563;
+        }
+        .input-row input {
+            flex-grow: 1;
+            padding: 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.2s;
+            box-sizing: border-box;
+        }
+        .input-row input:focus {
+            border-color: #3b82f6;
+        }
+        .result-display {
+            flex-grow: 1;
+            padding: 0.75rem;
+            background-color: #e0f2fe;
+            border: 1px solid #90cdf4;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #2563eb;
+            text-align: right;
+            box-sizing: border-box;
+        }
+        .header-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 1rem;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 1.5rem;
+            padding: 0.5rem 0;
+            border-bottom: 2px solid #cbd5e1;
+        }
+        .header-row > div {
+            flex-basis: 45%;
+            text-align: left;
+        }
+        .header-row .header-value {
+             flex-grow: 1;
+             text-align: center;
+        }
+        .header-row .header-result {
+            flex-basis: 45%;
+            text-align: right;
+        }
+
+        /* Specific style for the Breakup section header */
+        .breakup-header {
+            font-weight: 700;
+            color: #1f2937;
+            text-align: left;
+            margin-top: 1.5rem;
+            margin-bottom: 0.5rem;
+            padding-left: 0.5rem; /* Little indent */
+        }
+        /* Indent for breakup sub-items */
+        .breakup-item-row {
+            padding-left: 1rem; 
+        }
+
+        /* Highlighted Total Incentive at the end */
+        .highlighted-result-row .result-label, .highlighted-result-row .result-display {
+            font-size: 1.25rem; /* Larger font */
+            font-weight: 700; /* Bolder */
+            background-color: #FFC107; /* Yellow background, adjust if needed */
+            color: #333333; /* Darker text */
+            border-color: #FFA000; /* Darker yellow border */
+            padding: 1rem; /* More padding */
+            border-radius: 0.75rem; /* More rounded */
+        }
+        .highlighted-result-row .result-label {
+            background-color: transparent; /* Keep label background consistent with others */
+            border: none; /* No border on label */
+            text-align: left; /* Keep label aligned left */
+        }
+        .highlighted-result-row {
+            margin-top: 2rem; /* More space above */
+            padding-top: 1rem; /* Padding for the row itself */
+            border-top: 2px dashed #999; /* Separator */
+        }
+
+
+        @media (max-width: 640px) {
+            .container {
+                padding: 1.5rem;
+            }
+            .input-row, .result-row {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 0.5rem;
+            }
+            .input-row label, .result-row .result-label, .input-row input, .result-display {
+                width: 100%;
+                flex-basis: auto;
+                text-align: left;
+            }
+            .header-row {
+                display: none;
+            }
+            .result-display {
+                text-align: left;
+            }
+            .breakup-header {
+                 text-align: left;
+                 padding-left: 0;
+            }
+            .breakup-item-row {
+                padding-left: 0.5rem;
+            }
+            .highlighted-result-row .result-label, .highlighted-result-row .result-display {
+                text-align: left; /* Adjust alignment on small screens */
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-2xl font-bold text-gray-800 mb-6">Performance & Incentive Calculator</h1>
+        <p class="text-gray-600 mb-6">Fill in your metrics below to see live results and incentives.</p>
+
+        <div class="header-row">
+            <div class="header-value">Metric</div>
+            <div class="header-value">Value</div>
+        </div>
+
+        <div id="inputSection" class="mb-8">
+            <div class="input-row">
+                <label for="dateOfJoining">Date of Joining:</label>
+                <input type="date" id="dateOfJoining" oninput="updateAllResults()">
+            </div>
+            <div class="input-row">
+                <label for="qualifiedLead">Qualified Leads (QL):</label>
+                <input type="number" id="qualifiedLead" placeholder="e.g., 12" oninput="updateAllResults()">
+            </div>
+            <div class="input-row">
+                <label for="loginAchieved">Login Achieved:</label>
+                <input type="number" id="loginAchieved" placeholder="e.g., 8" oninput="updateAllResults()">
+            </div>
+            <div class="input-row">
+                <label for="totalDisbursement">Total Disbursement:</label>
+                <input type="number" id="totalDisbursement" placeholder="e.g., 55000000" oninput="updateAllResults()">
+            </div>
+            <div class="input-row">
+                <label for="monthlySalary">Monthly Salary:</label>
+                <input type="number" id="monthlySalary" placeholder="e.g., 40000" oninput="updateAllResults()">
+            </div>
+            <div class="input-row">
+                <label for="qlFromUniquePartner">QL from Unique Partner:</label>
+                <input type="number" id="qlFromUniquePartner" placeholder="e.g., 3" oninput="updateAllResults()">
+            </div>
+        </div>
+
+        <div id="resultSection">
+            <div class="result-row">
+                <div class="result-label">Total Month in System:</div>
+                <div id="monthsInSystem" class="result-display"></div>
+            </div>
+            <div class="result-row">
+                <div class="result-label">Target for QL:</div>
+                <div id="qualificationTarget" class="result-display"></div>
+            </div>
+            <div class="result-row">
+                <div class="result-label">Incentive for QL:</div>
+                <div id="incentiveForQl" class="result-display"></div>
+            </div>
+            <div class="result-row">
+                <div class="result-label">Target Login:</div>
+                <div id="targetLogin" class="result-display"></div>
+            </div>
+            <div class="result-row">
+                <div class="result-label">Login Incentive:</div>
+                <div id="loginIncentive" class="result-display"></div>
+            </div>
+            <div class="result-row">
+                <div class="result-label">Gross Revenue:</div>
+                <div id="grossRevenue" class="result-display"></div>
+            </div>
+            <div class="result-row">
+                <div class="result-label">Net Revenue:</div>
+                <div id="netRevenue" class="result-display"></div>
+            </div>
+            <div class="result-row">
+                <div class="result-label">Disbursement Incentive:</div>
+                <div id="disbursementIncentive" class="result-display"></div>
+            </div>
+            <div class="result-row">
+                <div class="result-label">Salary Justified (Status):</div> 
+                <div id="salaryJustifiedStatus" class="result-display"></div> 
+            </div>
+            <div class="result-row">
+                <div class="result-label">Salary Justified Incentive:</div>
+                <div id="salaryJustifiedIncentive" class="result-display"></div>
+            </div>
+            
+            <div class="result-row">
+                <div class="result-label">Salary Multiplier Justification:</div>
+                <div id="salaryMultiplierJustification" class="result-display"></div>
+            </div>
+            <div class="result-row">
+                <div class="result-label">Salary Justified Target:</div>
+                <div id="salaryJustifiedTarget" class="result-display"></div>
+            </div>
+            <div class="result-row">
+                <div class="result-label">Salary Justification Ach %:</div>
+                <div id="salaryJustificationAchPct" class="result-display"></div>
+            </div>
+            
+            <!-- Breakup of Incentive Section -->
+            <div class="breakup-header">Breakup of Incentive</div>
+            <div class="result-row breakup-item-row">
+                <div class="result-label">QL:</div>
+                <div id="breakupQlActual" class="result-display"></div> 
+            </div>
+            <div class="result-row breakup-item-row">
+                <div class="result-label">Salary Justification:</div>
+                <div id="breakupSalaryJustificationActual" class="result-display"></div>
+            </div>
+
+            <div class="result-row">
+                <div class="result-label">Total Incentive (without booster):</div>
+                <div id="totalIncentiveWithoutBooster" class="result-display"></div>
+            </div>
+            <div class="result-row">
+                <div class="result-label">Active Partner:</div>
+                <div id="activePartner" class="result-display"></div>
+            </div>
+            
+            <!-- Final Total Incentive at the end (Highlight this) -->
+            <div class="result-row highlighted-result-row"> 
+                <div class="result-label">Total Incentive at the end:</div> 
+                <div id="finalTotalIncentive" class="result-display"></div> 
+            </div>
+        </div>
+        
+    </div>
+
+    <script>
+        function updateAllResults() {
+            // Get input values, default to 0 if empty or invalid for calculations
+            const dateOfJoiningStr = document.getElementById('dateOfJoining').value; 
+            const qualifiedLead = parseFloat(document.getElementById('qualifiedLead').value) || 0;
+            const loginAchieved = parseFloat(document.getElementById('loginAchieved').value) || 0;
+            const totalDisbursement = parseFloat(document.getElementById('totalDisbursement').value) || 0;
+            const monthlySalary = parseFloat(document.getElementById('monthlySalary').value) || 0;
+            const qlFromUniquePartner = parseFloat(document.getElementById('qlFromUniquePartner').value) || 0;
+
+            // --- Calculation for "Months in System" (DATEDIF(C3, TODAY(), "m")) ---
+            let monthsInSystem = 0;
+            if (dateOfJoiningStr) {
+                const doj = new Date(dateOfJoiningStr);
+                const today = new Date();
+                if (!isNaN(doj.getTime())) { 
+                    monthsInSystem = (today.getFullYear() - doj.getFullYear()) * 12;
+                    monthsInSystem -= doj.getMonth();
+                    monthsInSystem += today.getMonth();
+                    if (today.getDate() < doj.getDate()) {
+                        monthsInSystem--;
+                    }
+                    monthsInSystem = Math.max(0, monthsInSystem);
+                }
+            }
+            if (isNaN(monthsInSystem) || !isFinite(monthsInSystem)) monthsInSystem = 0;
+
+
+            // --- Calculation for "Qualification Target" ---
+            let qualificationTarget = 0;
+            if (monthsInSystem <= 5) {
+                qualificationTarget = monthsInSystem * 2;
+            } else if (monthsInSystem === 6) { 
+                qualificationTarget = monthsInSystem * 2;
+            } else if (monthsInSystem <= 11) {
+                qualificationTarget = 15;
+            } else if (monthsInSystem <= 14) {
+                qualificationTarget = 18;
+            } else { 
+                qualificationTarget = 20;
+            }
+            if (isNaN(qualificationTarget) || !isFinite(qualificationTarget)) qualificationTarget = 0;
+
+
+            // --- Calculation for "Incentive for QL" ---
+            let incentiveForQl = 0;
+            if (monthsInSystem <= 1) {
+                incentiveForQl = qualifiedLead * 1000;
+            } else if (monthsInSystem <= 2) {
+                incentiveForQl = qualifiedLead * 750;
+            } else if (monthsInSystem <= 3) {
+                incentiveForQl = qualifiedLead * 250;
+            } else if (monthsInSystem <= 4) {
+                incentiveForQl = qualifiedLead * 500;
+            } else { 
+                incentiveForQl = 0;
+            }
+            if (isNaN(incentiveForQl) || !isFinite(incentiveForQl)) incentiveForQl = 0;
+
+
+            // --- Calculation for "Target Login" ---
+            let targetLogin = 0;
+            if (monthsInSystem === 4) {
+                targetLogin = qualifiedLead * 0.40;
+            } else if (monthsInSystem === 5) {
+                targetLogin = qualifiedLead * 0.45;
+            } else if (monthsInSystem >= 6 && monthsInSystem <= 11) {
+                targetLogin = qualifiedLead * 0.50;
+            } else if (monthsInSystem >= 12 && monthsInSystem <= 14) {
+                targetLogin = qualifiedLead * 0.55;
+            } else if (monthsInSystem >= 15 && monthsInSystem <= 24) {
+                targetLogin = qualifiedLead * 0.65;
+            } else { 
+                targetLogin = 0;
+            }
+            targetLogin = Math.round(targetLogin); 
+            if (isNaN(targetLogin) || !isFinite(targetLogin)) targetLogin = 0;
+
+
+            // --- Calculation for "Gross Revenue" ---
+            const grossRevenue = totalDisbursement * 0.01; 
+            if (isNaN(grossRevenue) || !isFinite(grossRevenue)) grossRevenue = 0;
+
+
+            // --- Calculation for "Net Revenue" ---
+            const netRevenue = grossRevenue / 2;
+            if (isNaN(netRevenue) || !isFinite(netRevenue)) netRevenue = 0;
+
+
+            // --- Calculation for "Disbursement Incentive" ---
+            const disbursementIncentive = netRevenue * 0.10;
+            if (isNaN(disbursementIncentive) || !isFinite(disbursementIncentive)) disbursementIncentive = 0;
+
+
+            // --- Calculation for "Login Incentive" ---
+            let loginIncentive = 0;
+            if (monthsInSystem > 4) {
+                // Protect against division by zero for targetLogin
+                if (targetLogin === 0) { 
+                    loginIncentive = 0;
+                } else {
+                    loginIncentive = (loginAchieved / targetLogin) * 1000 * loginAchieved;
+                }
+            } else { 
+                loginIncentive = loginAchieved * 1000;
+            }
+            if (isNaN(loginIncentive) || !isFinite(loginIncentive)) { 
+                loginIncentive = 0; 
+            }
+
+
+            // --- Calculation for "Salary Multiplier Justification" ---
+            let salaryMultiplierJustificationValue = 0; 
+            if (monthsInSystem <= 4) {
+                salaryMultiplierJustificationValue = 0;
+            } else if (monthsInSystem === 5) {
+                salaryMultiplierJustificationValue = 2;
+            } else if (monthsInSystem === 6) {
+                salaryMultiplierJustificationValue = 4;
+            } else if (monthsInSystem >= 7) {
+                if (monthsInSystem <= 11) {
+                    salaryMultiplierJustificationValue = 6;
+                } else if (monthsInSystem <= 14) {
+                    salaryMultiplierJustificationValue = 8;
+                } else if (monthsInSystem <= 24) {
+                    salaryMultiplierJustificationValue = 10;
+                } else { 
+                    salaryMultiplierJustificationValue = ''; 
+                }
+            } else { 
+                salaryMultiplierJustificationValue = ''; 
+            }
+            const salaryMultiplierJustificationDisplay = typeof salaryMultiplierJustificationValue === 'number' ? 
+                                                         salaryMultiplierJustificationValue.toFixed(1) : 
+                                                         String(salaryMultiplierJustificationValue);
+
+
+            // --- Calculation for "Salary Justified Target" ---
+            const smjNum = parseFloat(salaryMultiplierJustificationValue) || 0;
+            const salaryJustifiedTarget = smjNum * monthlySalary;
+            if (isNaN(salaryJustifiedTarget) || !isFinite(salaryJustifiedTarget)) salaryJustifiedTarget = 0;
+
+
+            // --- Calculation for "Salary Justified (Yes/No Status)" ---
+            let salaryJustifiedStatus = "";
+            // Only calculate if monthsInSystem is 4 or more
+            if (monthsInSystem >= 4) { 
+                if (monthsInSystem === 4) {
+                    salaryJustifiedStatus = (grossRevenue >= 2 * monthlySalary) ? "Yes" : "No";
+                } else if (monthsInSystem === 5) {
+                    salaryJustifiedStatus = (grossRevenue >= 4 * monthlySalary) ? "Yes" : "No";
+                } else if (monthsInSystem >= 6 && monthsInSystem <= 11) {
+                    salaryJustifiedStatus = (grossRevenue >= 6 * monthlySalary) ? "Yes" : "No";
+                } else if (monthsInSystem >= 12 && monthsInSystem <= 14) {
+                    salaryJustifiedStatus = (grossRevenue >= 8 * monthlySalary) ? "Yes" : "No";
+                } else if (monthsInSystem >= 15 && monthsInSystem <= 24) {
+                    salaryJustifiedStatus = (grossRevenue >= 10 * monthlySalary) ? "Yes" : "No";
+                } else {
+                    salaryJustifiedStatus = ""; // Fallback for monthsInSystem > 24
+                }
+            } else { // monthsInSystem < 4
+                salaryJustifiedStatus = ""; // No display if less than 4 months
+            }
+
+
+            // --- Calculation for "Salary Justified Incentive" (Monetary Value) ---
+            let salaryJustifiedIncentive = 0; 
+            // Only calculate if monthsInSystem is 4 or more
+            if (monthsInSystem >= 4) { // Apply the 4-month rule here
+                const safeSalaryJustifiedTargetForCalculation = (salaryJustifiedTarget !== 0) ? salaryJustifiedTarget : 1; 
+
+                if (monthsInSystem < 4) { // This part effectively becomes unreachable due to the outer if
+                    salaryJustifiedIncentive = 0.25 * disbursementIncentive; // This path won't be taken
+                } else if (monthsInSystem <= 6) {
+                    const ratio = (safeSalaryJustifiedTargetForCalculation !== 0) ? grossRevenue / safeSalaryJustifiedTargetForCalculation : 0;
+                    salaryJustifiedIncentive = Math.min(ratio, 1) * 0.25 * disbursementIncentive;
+                } else { 
+                    const ratio = (safeSalaryJustifiedTargetForCalculation !== 0) ? grossRevenue / safeSalaryJustifiedTargetForCalculation : 0;
+                    salaryJustifiedIncentive = Math.min(ratio, 1) * 0.5 * disbursementIncentive;
+                }
+            } else { // monthsInSystem < 4
+                salaryJustifiedIncentive = 0; // Explicitly 0 if less than 4 months
+            }
+            if (isNaN(salaryJustifiedIncentive) || !isFinite(salaryJustifiedIncentive)) { 
+                salaryJustifiedIncentive = 0;
+            }
+
+
+            // --- Calculation for "Salary Justification Ach %" ---
+            let salaryJustificationAchPct = 0;
+            if (salaryJustifiedTarget !== 0) {
+                salaryJustificationAchPct = (grossRevenue / salaryJustifiedTarget) * 100;
+            } 
+            if (isNaN(salaryJustificationAchPct) || !isFinite(salaryJustificationAchPct) || salaryJustificationAchPct > 999999999) { 
+                salaryJustificationAchPct = 0; 
+            }
+
+            // --- Calculation for "Breakup of Incentive: QL component" ---
+            let breakupQlComponent = 0;
+            if (monthsInSystem <= 4) {
+                breakupQlComponent = disbursementIncentive;
+            } else if (monthsInSystem <= 6) { 
+                const ratio = (qualificationTarget !== 0) ? qualifiedLead / qualificationTarget : 0;
+                breakupQlComponent = disbursementIncentive * ((qualifiedLead >= qualificationTarget) ? 0.75 : ratio * 0.75);
+            } else { 
+                const ratio = (qualificationTarget !== 0) ? qualifiedLead / qualificationTarget : 0;
+                breakupQlComponent = disbursementIncentive * ((qualifiedLead >= qualificationTarget) ? 0.5 : ratio * 0.5);
+            }
+            if (isNaN(breakupQlComponent) || !isFinite(breakupQlComponent)) { 
+                breakupQlComponent = 0; 
+            }
+
+
+            // --- Calculation for "Total Incentive (without booster)" ---
+            const totalIncentiveWithoutBooster = breakupQlComponent + salaryJustifiedIncentive;
+            if (isNaN(totalIncentiveWithoutBooster) || !isFinite(totalIncentiveWithoutBooster)) totalIncentiveWithoutBooster = 0;
+
+
+            // --- Calculation for "Active Partner" ---
+            let activePartner = 0;
+            if (monthsInSystem >= 15) {
+                activePartner = 14;
+            } else if (monthsInSystem >= 12) {
+                activePartner = 12;
+            } else if (monthsInSystem >= 7) {
+                activePartner = 10;
+            } else if (monthsInSystem >= 6) {
+                activePartner = 8;
+            } else if (monthsInSystem >= 4) {
+                activePartner = 7;
+            } else { 
+                activePartner = 1000; 
+            }
+            if (isNaN(activePartner) || !isFinite(activePartner)) activePartner = 0;
+
+
+            // --- Calculation for "Total Incentive with Booster" ---
+            let totalIncentiveWithBooster = 0;
+            if (qlFromUniquePartner >= activePartner) { 
+                 totalIncentiveWithBooster = totalIncentiveWithoutBooster + (0.05 * totalIncentiveWithoutBooster);
+            } else {
+                totalIncentiveWithBooster = 0;
+            }
+            if (isNaN(totalIncentiveWithBooster) || !isFinite(totalIncentiveWithBooster)) totalIncentiveWithBooster = 0;
+
+
+            // --- Final "Total Incentive at the end" (previously Weighted Incentive) ---
+            let finalTotalIncentive = 0;
+            // The formula is: QL Incentive + Login Incentive + ( (Total Incentive (with Booster) if non-zero) ELSE Total Incentive (without Booster) )
+            
+            let boosterComponent = 0;
+            if (totalIncentiveWithBooster !== 0) { 
+                boosterComponent = totalIncentiveWithBooster;
+            } else {
+                boosterComponent = totalIncentiveWithoutBooster;
+            }
+            if (isNaN(boosterComponent) || !isFinite(boosterComponent)) boosterComponent = 0;
+
+            finalTotalIncentive = incentiveForQl + loginIncentive + boosterComponent; 
+            
+            if (isNaN(finalTotalIncentive) || !isFinite(finalTotalIncentive)) finalTotalIncentive = 0;
+
+
+            // --- Display Results ---
+            document.getElementById('monthsInSystem').textContent = monthsInSystem.toFixed(0);
+            document.getElementById('qualificationTarget').textContent = qualificationTarget.toFixed(0);
+            document.getElementById('incentiveForQl').textContent = formatCurrency(incentiveForQl);
+            document.getElementById('targetLogin').textContent = targetLogin.toFixed(0);
+            document.getElementById('loginIncentive').textContent = formatCurrency(loginIncentive); 
+            document.getElementById('grossRevenue').textContent = formatCurrency(grossRevenue);
+            document.getElementById('netRevenue').textContent = formatCurrency(netRevenue);
+            document.getElementById('disbursementIncentive').textContent = formatCurrency(disbursementIncentive);
+            
+            document.getElementById('salaryJustifiedStatus').textContent = salaryJustifiedStatus; 
+            document.getElementById('salaryJustifiedIncentive').textContent = formatCurrency(salaryJustifiedIncentive); 
+
+            document.getElementById('salaryMultiplierJustification').textContent = salaryMultiplierJustificationDisplay;
+            document.getElementById('salaryJustifiedTarget').textContent = formatCurrency(salaryJustifiedTarget);
+            document.getElementById('salaryJustificationAchPct').textContent = salaryJustificationAchPct.toFixed(2) + '%';
+            
+            document.getElementById('breakupQlActual').textContent = formatCurrency(breakupQlComponent); 
+            document.getElementById('breakupSalaryJustificationActual').textContent = formatCurrency(salaryJustifiedIncentive); 
+
+            document.getElementById('totalIncentiveWithoutBooster').textContent = formatCurrency(totalIncentiveWithoutBooster);
+            document.getElementById('activePartner').textContent = activePartner.toFixed(0); 
+            
+            document.getElementById('finalTotalIncentive').textContent = formatCurrency(finalTotalIncentive); 
+        }
+
+        function formatCurrency(amount) {
+            if (typeof amount !== 'number' || isNaN(amount) || !isFinite(amount)) {
+                return '₹0'; 
+            }
+            return '₹' + amount.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+        }
+
+        document.addEventListener('DOMContentLoaded', updateAllResults);
+    </script>
+</body>
+</html>
